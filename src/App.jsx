@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MainScreen from './screens/MainScreen/MainScreen';
+import { LanguageProvider } from './context/LanguageContext';
 import './index.css';
 
 function App() {
@@ -30,13 +31,15 @@ function App() {
   };
 
   return (
-    <div className="app-wrapper">
-      {/* Immersive Background */}
-      <div className="ambient-bg"></div>
-      <div className="ambient-blur"></div>
+    <LanguageProvider>
+      <div className="app-wrapper">
+        {/* Immersive Background */}
+        <div className="ambient-bg"></div>
+        <div className="ambient-blur"></div>
 
-      <MainScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
-    </div>
+        <MainScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      </div>
+    </LanguageProvider>
   );
 }
 
