@@ -1,0 +1,146 @@
+.impact {
+  position: relative;
+  z-index: 1;
+}
+
+.impactGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 4rem;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  margin-top: 3rem;
+}
+
+.textContent h3 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.textContent > p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.chartContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 2.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+}
+
+.dark-theme .chartContent {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.chartRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chartLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.chartLabel h4 {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.chartLabel span {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.barContainer {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.05);
+  height: 24px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dark-theme .barContainer {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bar {
+  height: 100%;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 0; /* Animated in via React */
+}
+
+.barSlow {
+  background: var(--accent-red);
+}
+
+.barFast {
+  background: var(--accent-green);
+}
+
+@media (max-width: 992px) {
+  .impactGrid {
+    grid-template-columns: 1fr;
+    padding: 3rem 2rem;
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .impactGrid {
+    padding: 2rem 1.5rem;
+  }
+  .statGrid {
+    grid-template-columns: 1fr;
+  }
+}
