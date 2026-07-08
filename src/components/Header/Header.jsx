@@ -18,36 +18,29 @@ const Header = ({ isDarkMode, toggleTheme }) => {
     <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
       <div className={styles.headerContainer}>
         <a href="/" className={styles.logo}>
-          <svg className={styles.logoIcon} width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className={styles.logoIcon} width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="logo-bridge-grad" x1="4" y1="26" x2="28" y2="26" gradientUnits="userSpaceOnUse">
+              <linearGradient id="gov-shield-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor="var(--primary-color)" />
-                <stop offset="50%" stopColor="#00FF87" />
-                <stop offset="100%" stopColor="var(--accent-color, #4facfe)" />
+                <stop offset="100%" stopColor="#0a4687" /> {/* Deep authoritative blue */}
               </linearGradient>
-              <radialGradient id="logo-glow" cx="16" cy="8" r="6" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#00FF87" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#00FF87" stopOpacity="0" />
-              </radialGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="1" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
             </defs>
 
-            {/* Inner loop representing dynamic feedback */}
-            <path d="M 8,24 C 8,16 12,12 16,12 C 20,12 24,16 24,24" stroke="var(--text-secondary)" strokeWidth="1.5" strokeDasharray="3 3" strokeLinecap="round" opacity="0.45" />
-
-            {/* Primary bridge arch */}
-            <path d="M 4,26 C 4,14 10,8 16,8 C 22,8 28,14 28,26" stroke="url(#logo-bridge-grad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-
-            {/* AI center glow */}
-            <circle cx="16" cy="8" r="6" fill="url(#logo-glow)" />
-
-            {/* Citizen Node */}
-            <circle cx="4" cy="26" r="3.5" fill="var(--primary-color)" stroke="var(--bg-glass)" strokeWidth="1" />
+            {/* Solid Shield Background */}
+            <path d="M12 2L3 6v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V6l-9-4z" fill="url(#gov-shield-grad)" />
             
-            {/* MP/Representative Node */}
-            <circle cx="28" cy="26" r="3.5" fill="var(--accent-color, #4facfe)" stroke="var(--bg-glass)" strokeWidth="1" />
+            {/* Stylized Arch/Bridge inside the shield */}
+            <path d="M7 16V12.5C7 9.73858 9.23858 7.5 12 7.5C14.7614 7.5 17 9.73858 17 12.5V16" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
             
-            {/* Central Coordination AI Node */}
-            <circle cx="16" cy="8" r="3" fill="#00FF87" stroke="var(--bg-glass)" strokeWidth="1" />
+            {/* Bridge Deck / Connecting Line */}
+            <path d="M5.5 14H18.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
+            
+            {/* Central glowing element representing "Lok" (People/AI Core) */}
+            <circle cx="12" cy="11.5" r="2.2" fill="#00FF87" filter="url(#glow)" />
           </svg>
           LokSetu
         </a>
