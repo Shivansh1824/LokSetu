@@ -1,9 +1,9 @@
 :root {
   /* Color Palette - Civic Trust Theme (Light Mode Default) */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f4f4f5;
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-glass: rgba(248, 250, 252, 0.45);
+  --bg-card: rgba(255, 255, 255, 0.75);
   
   --text-primary: #09090b;
   --text-secondary: #52525b;
@@ -56,8 +56,8 @@
 .dark-theme {
   --bg-primary: #020617; /* Midnight Blue */
   --bg-secondary: #0f172a;
-  --bg-glass: rgba(2, 6, 23, 0.85);
-  --bg-card: rgba(15, 23, 42, 0.85);
+  --bg-glass: rgba(2, 6, 23, 0.45);
+  --bg-card: rgba(15, 23, 42, 0.65);
   
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
@@ -73,6 +73,11 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.9), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
 }
 
+html {
+  background-color: var(--bg-primary);
+  transition: background-color var(--transition-normal);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -81,7 +86,7 @@
 
 body {
   font-family: var(--font-family);
-  background-color: var(--bg-primary);
+  background-color: transparent;
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -191,11 +196,11 @@ button {
   background-position: center;
   background-repeat: no-repeat;
   z-index: -2;
-  opacity: 0.6;
+  opacity: 0.95;
 }
 
 .dark-theme .ambient-bg {
-  opacity: 0.3; /* Darker image overlay in dark mode */
+  opacity: 0.8; /* Higher image opacity in dark mode so colors show through */
 }
 
 .ambient-blur {
