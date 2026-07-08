@@ -1,26 +1,60 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import styles from './Footer.module.css';
 
 const Footer = () => {
+  const { t } = useLanguage();
+
   return (
     <footer className={styles.footer}>
       <div className={`container ${styles.footerGrid}`}>
         <div className={styles.footerBrand}>
           <a href="/" className={styles.logo}>
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="footer-logo-bridge-grad" x1="4" y1="26" x2="28" y2="26" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="var(--primary-color)" />
+                  <stop offset="50%" stopColor="#00FF87" />
+                  <stop offset="100%" stopColor="var(--accent-color, #4facfe)" />
+                </linearGradient>
+                <radialGradient id="footer-logo-glow" cx="16" cy="8" r="6" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#00FF87" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#00FF87" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+
+              {/* Inner loop representing dynamic feedback */}
+              <path d="M 8,24 C 8,16 12,12 16,12 C 20,12 24,16 24,24" stroke="var(--text-secondary)" strokeWidth="1.5" strokeDasharray="3 3" strokeLinecap="round" opacity="0.45" />
+
+              {/* Primary bridge arch */}
+              <path d="M 4,26 C 4,14 10,8 16,8 C 22,8 28,14 28,26" stroke="url(#footer-logo-bridge-grad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+              {/* AI center glow */}
+              <circle cx="16" cy="8" r="6" fill="url(#footer-logo-glow)" />
+
+              {/* Citizen Node */}
+              <circle cx="4" cy="26" r="3.5" fill="var(--primary-color)" stroke="var(--bg-glass)" strokeWidth="1" />
+              
+              {/* MP/Representative Node */}
+              <circle cx="28" cy="26" r="3.5" fill="var(--accent-color, #4facfe)" stroke="var(--bg-glass)" strokeWidth="1" />
+              
+              {/* Central Coordination AI Node */}
+              <circle cx="16" cy="8" r="3" fill="#00FF87" stroke="var(--bg-glass)" strokeWidth="1" />
+            </svg>
             Lok<span className={styles.logoAccent}>Setu</span>
           </a>
           <p className={styles.brandDesc}>
-            Empowering citizens through transparent, accessible, and modern digital governance solutions.
+            {t('tagline')}
           </p>
         </div>
         
         <div className={styles.footerLinks}>
-          <h4>Platform</h4>
+          <h4>{t('platform')}</h4>
           <ul>
-            <li><a href="#how-it-works">How it Works</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#impact">Public Grievances</a></li>
-            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#how-it-works">{t('howItWorks')}</a></li>
+            <li><a href="#features">{t('features')}</a></li>
+            <li><a href="#impact">{t('trackComplaints')}</a></li>
+            <li><a href="#faq">{t('faq')}</a></li>
           </ul>
         </div>
         
@@ -46,7 +80,7 @@ const Footer = () => {
       </div>
       
       <div className={`container ${styles.footerBottom}`}>
-        <p>&copy; {new Date().getFullYear()} LokSetu. All rights reserved.</p>
+        <p>{t('copyright')}</p>
         <div className={styles.socials}>
           <a href="#twitter" className={styles.socialIcon} aria-label="Twitter">
              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>

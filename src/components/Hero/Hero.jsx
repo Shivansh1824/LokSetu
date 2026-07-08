@@ -1,7 +1,10 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import styles from './Hero.module.css';
 
 const Hero = () => {
+  const { t } = useLanguage();
+
   return (
     <section className={styles.hero}>
       <div className={`container ${styles.container}`}>
@@ -12,26 +15,26 @@ const Hero = () => {
           </div>
           
           <h1 className={styles.title}>
-            Turn Constituency Chaos into Actionable Intelligence.
+            {t('heroTitle')}
           </h1>
           
           <p className={styles.description}>
-            LokSetu bridges the gap between citizens and representatives. Citizens report grievances directly, while the AI-powered MP Dashboard maps demand hotspots and prioritizes development works instantly.
+            {t('heroDesc')}
           </p>
           
           <div className={styles.actions}>
-            <a href="/citizen/report" className="btn btn-citizen">Report an Issue</a>
-            <a href="/mp/dashboard" className="btn btn-primary">Open MP Dashboard</a>
+            <a href="/citizen/report" className="btn btn-citizen">{t('fileComplaint')}</a>
+            <a href="/mp/dashboard" className="btn btn-primary">{t('openMpDashboard')}</a>
           </div>
 
           <div className={styles.features}>
             <div className={styles.featureItem}>
-              <h4>For Citizens</h4>
-              <p>Transparent grievance tracking and direct communication.</p>
+              <h4>{t('forCitizens')}</h4>
+              <p>{t('forCitizensDesc')}</p>
             </div>
             <div className={styles.featureItem}>
-              <h4>For MPs</h4>
-              <p>AI-driven priority scoring and automated budget allocation.</p>
+              <h4>{t('forMps')}</h4>
+              <p>{t('forMpsDesc')}</p>
             </div>
           </div>
         </div>
@@ -53,8 +56,8 @@ const Hero = () => {
               </svg>
             </div>
             <div className={styles.statusInfo}>
-              <h4>Ward 3 Issue Resolved</h4>
-              <p>Water Supply Fixed • Just now</p>
+              <h4>{t('resolvedText')}</h4>
+              <p>{t('resolvedSubtext')}</p>
             </div>
           </div>
         </div>

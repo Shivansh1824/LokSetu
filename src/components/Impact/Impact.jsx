@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import styles from './Impact.module.css';
 
 const Impact = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Simple intersection observer to trigger animation
@@ -31,19 +33,19 @@ const Impact = () => {
           
           {/* Left Column: Text & Stats */}
           <div className={styles.textContent}>
-            <h3>The Real-World Impact</h3>
+            <h3>{t('impactTitle')}</h3>
             <p>
-              LokSetu replaces bureaucratic black holes with transparent, AI-driven action. By automating duplicate detection and mapping complaints geospatially, we eliminate months of manual processing.
+              {t('impactDesc')}
             </p>
             
             <div className={styles.statGrid}>
               <div className={styles.statItem}>
-                <div className={styles.statValue}>10k+</div>
-                <div className={styles.statLabel}>Complaints Auto-Categorized</div>
+                <div className={styles.statValue}>{t('stat1Val')}</div>
+                <div className={styles.statLabel}>{t('stat1Label')}</div>
               </div>
               <div className={styles.statItem}>
-                <div className={styles.statValue}>85%</div>
-                <div className={styles.statLabel}>Reduction in Duplicates</div>
+                <div className={styles.statValue}>{t('stat2Val')}</div>
+                <div className={styles.statLabel}>{t('stat2Label')}</div>
               </div>
             </div>
           </div>
@@ -53,8 +55,8 @@ const Impact = () => {
             
             <div className={styles.chartRow}>
               <div className={styles.chartLabel}>
-                <h4>Without LokSetu</h4>
-                <span>120+ Days</span>
+                <h4>{t('withoutLoksetu')}</h4>
+                <span>{t('days120')}</span>
               </div>
               <div className={styles.barContainer}>
                 <div 
@@ -66,8 +68,8 @@ const Impact = () => {
 
             <div className={styles.chartRow}>
               <div className={styles.chartLabel}>
-                <h4>With LokSetu</h4>
-                <span>14 Days</span>
+                <h4>{t('withLoksetu')}</h4>
+                <span>{t('days14')}</span>
               </div>
               <div className={styles.barContainer}>
                 <div 
