@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import styles from './Header.module.css';
 
 const Header = ({ isDarkMode, toggleTheme }) => {
   const [scrolled, setScrolled] = useState(false);
   const { language, toggleLanguage, t } = useLanguage();
+  const location = useLocation();
+
+  const isLoginScreen = location.pathname === '/login';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,7 +21,7 @@ const Header = ({ isDarkMode, toggleTheme }) => {
   return (
     <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
       <div className={styles.headerContainer}>
-        <a href="/" className={styles.logo}>
+        <Link to="/" className={styles.logo}>
           <svg className={styles.logoIcon} width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="gov-shield-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
@@ -43,18 +47,32 @@ const Header = ({ isDarkMode, toggleTheme }) => {
             <circle cx="12" cy="11.5" r="2.2" fill="#00FF87" filter="url(#glow)" />
           </svg>
           <span className={styles.logoText}>Lok<span className={styles.logoAccent}>Setu</span></span>
-        </a>
+        </Link>
         
-        <nav className={styles.nav}>
-          <a href="#how-it-works" className={styles.navLink}>{t('howItWorks')}</a>
-          <a href="#features" className={styles.navLink}>{t('features')}</a>
-          <a href="#impact" className={styles.navLink}>{t('trackComplaints')}</a>
-          <a href="#faq" className={styles.navLink}>{t('faq')}</a>
-        </nav>
+        {!isLoginScreen && (
+          <nav className={styles.nav}>
+            <a href="/#how-it-works" className={styles.navLink}>{t('howItWorks')}</a>
+            <a href="/#features" className={styles.navLink}>{t('features')}</a>
+            <a href="/#impact" className={styles.navLink}>{t('trackComplaints')}</a>
+            <a href="/#faq" className={styles.navLink}>{t('faq')}</a>
+          </nav>
+        )}
 
         <div className={styles.actions}>
-          <a href="/mp/login" className="btn btn-secondary btn-sm">{t('mpLogin')}</a>
-          <a href="/citizen/report" className="btn btn-citizen btn-sm">{t('fileComplaint')}</a>
+          {!isLoginScreen ? (
+            <>
+              <Link to="/login?type=mp" className="btn btn-secondary btn-sm">{t('mpLogin')}</Link>
+              <Link to="/login?type=citizen" className="btn btn-citizen btn-sm">{t('fileComplaint')}</Link>
+            </>
+          ) : (
+            <Link to="/" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              {t('backToHome')}
+            </Link>
+          )}
           
           <button onClick={toggleLanguage} className={styles.langToggle} aria-label="Toggle Language">
             {language === 'en' ? 'हिन्दी' : 'EN'}

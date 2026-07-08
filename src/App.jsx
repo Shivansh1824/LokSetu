@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainScreen from './screens/MainScreen/MainScreen';
+import LoginScreen from './screens/LoginScreen/LoginScreen';
 import { LanguageProvider } from './context/LanguageContext';
 import './index.css';
 
@@ -37,7 +39,12 @@ function App() {
         <div className="ambient-bg"></div>
         <div className="ambient-blur"></div>
 
-        <MainScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+        <Router>
+          <Routes>
+            <Route path="/" element={<MainScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} />
+            <Route path="/login" element={<LoginScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} />
+          </Routes>
+        </Router>
       </div>
     </LanguageProvider>
   );
