@@ -42,7 +42,7 @@ const Header = ({ isDarkMode, toggleTheme }) => {
             {/* Central glowing element representing "Lok" (People/AI Core) */}
             <circle cx="12" cy="11.5" r="2.2" fill="#00FF87" filter="url(#glow)" />
           </svg>
-          LokSetu
+          <span className={styles.logoText}>Lok<span className={styles.logoAccent}>Setu</span></span>
         </a>
         
         <nav className={styles.nav}>

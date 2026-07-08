@@ -42,6 +42,10 @@
   transition: opacity var(--transition-fast);
 }
 
+.logoAccent {
+  color: var(--primary-color);
+}
+
 .logo:hover {
   opacity: 0.95;
 }
