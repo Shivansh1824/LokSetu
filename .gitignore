@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.development
+.env.production
+.env*.local
+supabase/.temp/
+supabase/.temp
+.DS_Store
+node_modules/

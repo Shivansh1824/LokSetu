@@ -1,3 +1,0 @@
-# LokSetu
-
-LokSetu uses AI to bridge the gap between citizens and MPs. It parses unstructured, multilingual civic complaints and cross-references them with local demographics to generate a mathematical Priori...

@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LokSetu - Database Blueprint & Interactive Schema</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-bg: #1e293b;
+            --surface-card: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.15);
+            --accent-green: #10b981;
+            --accent-green-glow: rgba(16, 185, 129, 0.1);
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --border-color: #475569;
+            --pk-color: #f59e0b;
+            --fk-color: #ec4899;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 3rem 1.5rem;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--primary-glow);
+            color: #60a5fa;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 0.4rem 1.2rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.075em;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 30%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Nav Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            background-color: var(--surface-bg);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards and Layout */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr 1.3fr;
+            }
+        }
+
+        .card {
+            background-color: var(--surface-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        /* ER Diagram styling */
+        .er-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .er-node {
+            background-color: var(--surface-card);
+            border: 1px solid #64748b;
+            border-radius: 12px;
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .er-node.wards { border-left: 5px solid var(--accent-green); }
+        .er-node.profiles { border-left: 5px solid #a78bfa; }
+        .er-node.citizens { border-left: 5px solid var(--primary); }
+        .er-node.complaints { border-left: 5px solid var(--fk-color); }
+        .er-node.development { border-left: 5px solid var(--accent-orange); }
+
+        .er-node-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .er-fields {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            list-style: none;
+        }
+
+        .er-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+
+        .er-field:last-child {
+            border-bottom: none;
+        }
+
+        .key-badge {
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .pk { background-color: rgba(245, 158, 11, 0.2); color: var(--pk-color); border: 1px solid rgba(245, 158, 11, 0.4); }
+        .fk { background-color: rgba(236, 72, 153, 0.2); color: var(--fk-color); border: 1px solid rgba(236, 72, 153, 0.4); }
+
+        /* Tables and Specs */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.02);
+            font-family: 'Outfit', sans-serif;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        td {
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .field-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa;
+            font-weight: 500;
+        }
+
+        .type-badge {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* SQL View block styling */
+        pre {
+            background-color: #0b0f19;
+            border: 1px solid #1e293b;
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+            max-height: 500px;
+        }
+
+        code {
+            color: #38bdf8;
+        }
+
+        .sql-keyword { color: #f43f5e; font-weight: 500; }
+        .sql-type { color: #34d399; }
+        .sql-comment { color: #64748b; font-style: italic; }
+        .sql-string { color: #fbbf24; }
+
+        /* Priority Sandbox UI */
+        .sandbox {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.5);
+        }
+
+        .slider-group {
+            margin-bottom: 2rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .slider-label {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .slider-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .results-panel {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .score-display {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            color: #60a5fa;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .score-explanation {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .weight-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .weight-card {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .weight-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .urgency-text { color: var(--accent-orange); }
+        .density-text { color: #a78bfa; }
+
+        /* Data Sourcing Guide styling */
+        .guide-step {
+            margin-bottom: 2rem;
+            padding-left: 1.5rem;
+            border-left: 2px solid var(--primary);
+        }
+
+        .guide-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.15rem;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .guide-desc {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .api-details {
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px dashed var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            margin-top: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .link-btn {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .link-btn:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Badges for workflow status */
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .status-pending { background-color: rgba(245, 158, 11, 0.2); color: var(--accent-orange); }
+        .status-active { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .status-completed { background-color: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .status-cancelled { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="badge">Constituency OS Engine</span>
+            <h1>LokSetu Database Blueprint</h1>
+            <p class="subtitle">Complete visual ER layout, detailed tables dictionary, live priority calculation playground, and government API guide</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <nav class="tabs">
+            <button class="tab-btn active" onclick="switchTab('spec-tab')">📊 Table Dictionaries</button>
+            <button class="tab-btn" onclick="switchTab('sandbox-tab')">🧮 Priority Sandbox</button>
+            <button class="tab-btn" onclick="switchTab('sql-tab')">💾 SQL Migrations</button>
+            <button class="tab-btn" onclick="switchTab('data-tab')">🌏 Real-World APIs & Data</button>
+        </nav>
+
+        <!-- Tab 1: Table Specifications & ER Visual -->
+        <div id="spec-tab" class="tab-content active">
+            <div class="grid-layout">
+                <!-- Visual Connections -->
+                <div class="er-flow">
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="card-title">
+                            <span>🔗 ER Schema Map</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Unified System Relations</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <!-- Node 1: Wards -->
+                            <div class="er-node wards">
+                                <div class="er-node-title">
+                                    <span>wards</span>
+                                    <span style="font-size:0.75rem; color:var(--accent-green)">Demographics</span>
+                                </div>
+                                <ul class="er-fields">
+                                    <li class="er-field"><span>id</span> <span class="key-badge pk">PK (uuid)</span></li>
+                                    <li class="er-field"><span>ward_name</span> <span>varchar(100)</span></li>
+                                    <li class="er-field"><span>population</span> <span>integer</span></li>
+                                </ul>
+                            </div>
+
+                            <!-- Node 2: Profiles -->
+                            <div class="er-node profiles">
+                                <div class="er-node-title">
+                                    <span>profiles</span>
+                                    <span style="font-size:0.75rem; color:#a78bfa">User Accounts & Roles</span>
+                                </div>
+                                <ul class="er-fields">
+                                    <li class="er-field"><span>id</span> <span class="key-badge pk">PK (uuid)</span></li>
+                                    <li class="er-field"><span>role</span> <span>varchar ('MP', 'Staff', 'Officer', 'Citizen')</span></li>
+                                    <li class="er-field"><span>full_name</span> <span>varchar(100)</span></li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Node 3: Citizens -->
+                            <div class="er-node citizens">
+                                <div class="er-node-title">
+                                    <span>citizens</span>
+                                    <span style="font-size:0.75rem; color:var(--primary)">Portal Signups</span>
+                                </div>
+                                <ul class="er-fields">
+                                    <li class="er-field"><span>id</span> <span class="key-badge pk">PK (uuid)</span></li>
+                                    <li class="er-field"><span>ward_id</span> <span class="key-badge fk">FK -> wards.id</span></li>
+                                    <li class="er-field"><span>phone_number</span> <span>varchar(20)</span></li>
+                                </ul>
+                            </div>
+
+                            <!-- Node 4: Complaints -->
+                            <div class="er-node complaints">
+                                <div class="er-node-title">
+                                    <span>complaints</span>
+                                    <span style="font-size:0.75rem; color:var(--fk-color)">Inbound Grievances</span>
+                                </div>
+                                <ul class="er-fields">
+                                    <li class="er-field"><span>id</span> <span class="key-badge pk">PK (uuid)</span></li>
+                                    <li class="er-field"><span>citizen_id</span> <span class="key-badge fk">FK -> citizens.id (nullable)</span></li>
+                                    <li class="er-field"><span>ward_id</span> <span class="key-badge fk">FK -> wards.id</span></li>
+                                    <li class="er-field"><span>development_work_id</span> <span class="key-badge fk">FK -> development_works.id (nullable)</span></li>
+                                    <li class="er-field"><span>status</span> <span>varchar ('Pending', 'Reviewed', 'Sanctioned', 'Rejected', 'Resolved')</span></li>
+                                </ul>
+                            </div>
+
+                            <!-- Node 5: Development Works -->
+                            <div class="er-node development">
+                                <div class="er-node-title">
+                                    <span>development_works</span>
+                                    <span style="font-size:0.75rem; color:var(--accent-orange)">MP Admin & Sanctions</span>
+                                </div>
+                                <ul class="er-fields">
+                                    <li class="er-field"><span>id</span> <span class="key-badge pk">PK (uuid)</span></li>
+                                    <li class="er-field"><span>ward_id</span> <span class="key-badge fk">FK -> wards.id</span></li>
+                                    <li class="er-field"><span>created_by</span> <span class="key-badge fk">FK -> profiles.id</span></li>
+                                    <li class="er-field"><span>sanctioned_budget</span> <span>decimal(12,2)</span></li>
+                                    <li class="er-field"><span>status</span> <span>varchar ('Sanctioned', 'Tendering', 'Under Construction', 'Completed', 'Cancelled')</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Tables -->
+                <div>
+                    <!-- Profiles Table -->
+                    <div class="card">
+                        <div class="card-title">Profiles Table <span class="status-badge status-completed">Live</span></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Field Name</th>
+                                    <th>Type</th>
+                                    <th>Constraints</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="field-name">id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge pk">PK</span></td>
+                                    <td>Links to Supabase Auth `auth.users.id`.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">full_name</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Not Null</td>
+                                    <td>Account holder full name.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">role</td>
+                                    <td><span class="type-badge">VARCHAR(50)</span></td>
+                                    <td>CHECK (role IN ('MP', 'Staff', 'Officer', 'Citizen'))</td>
+                                    <td>Access control role defining user permissions.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">assigned_ward_id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge fk">FK</span> -> wards(id), Nullable</td>
+                                    <td>Assigned ward if user is a regional/department officer.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">created_at</td>
+                                    <td><span class="type-badge">TIMESTAMPTZ</span></td>
+                                    <td>DEFAULT now()</td>
+                                    <td>Timestamp when account was created.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Development Works Table -->
+                    <div class="card">
+                        <div class="card-title">Development Works Table <span class="status-badge status-completed">Live</span></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Field Name</th>
+                                    <th>Type</th>
+                                    <th>Constraints</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="field-name">id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge pk">PK</span></td>
+                                    <td>Primary Key for tracking sanctioned development projects.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">work_title</td>
+                                    <td><span class="type-badge">VARCHAR(200)</span></td>
+                                    <td>Not Null</td>
+                                    <td>Summary name (e.g. "Water Pump Installation Ward 3").</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">description</td>
+                                    <td><span class="type-badge">TEXT</span></td>
+                                    <td>Nullable</td>
+                                    <td>Detailed descriptions of parameters.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">ward_id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge fk">FK</span> -> wards(id), Not Null</td>
+                                    <td>Target ward geography receiving the infrastructure work.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">sanctioned_budget</td>
+                                    <td><span class="type-badge">DECIMAL(12,2)</span></td>
+                                    <td>Not Null, Default 0.00</td>
+                                    <td>Official funding approved/sanctioned by the MP.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">spent_amount</td>
+                                    <td><span class="type-badge">DECIMAL(12,2)</span></td>
+                                    <td>Default 0.00</td>
+                                    <td>Actual funding spent during execution tracking.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">assigned_department</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Not Null</td>
+                                    <td>Responsible government department (e.g. "PWD", "MCD").</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">officer_in_charge</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Nullable</td>
+                                    <td>Department officer contact details.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">status</td>
+                                    <td><span class="type-badge">VARCHAR(50)</span></td>
+                                    <td>CHECK status values</td>
+                                    <td>Lifecycle: 'Sanctioned', 'Tendering', 'Under Construction', 'Completed', 'Cancelled'</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">created_by</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge fk">FK</span> -> profiles(id)</td>
+                                    <td>MP or Staff profile authorizing the project sanction.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Wards Table -->
+                    <div class="card">
+                        <div class="card-title">Wards Table <span class="status-badge status-completed">Live</span></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Field Name</th>
+                                    <th>Type</th>
+                                    <th>Constraints</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="field-name">id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge pk">PK</span></td>
+                                    <td>Primary Key. Unique identifier.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">ward_name</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Unique, Not Null</td>
+                                    <td>Geographic ward name (e.g. "Dwarka-A")</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">ward_number</td>
+                                    <td><span class="type-badge">VARCHAR(20)</span></td>
+                                    <td>Unique, Not Null</td>
+                                    <td>Official municipal LGD code (e.g. "012-D")</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">population</td>
+                                    <td><span class="type-badge">INTEGER</span></td>
+                                    <td>&gt; 0, Not Null</td>
+                                    <td>Ward population count. Used in prioritization.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">latitude / longitude</td>
+                                    <td><span class="type-badge">DECIMAL(9,6)</span></td>
+                                    <td>Not Null</td>
+                                    <td>Centroid coordinates for map plotting.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Citizens Table -->
+                    <div class="card">
+                        <div class="card-title">Citizens Table <span class="status-badge status-completed">Live</span></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Field Name</th>
+                                    <th>Type</th>
+                                    <th>Constraints</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="field-name">id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge pk">PK</span></td>
+                                    <td>Citizen primary key (links to Profiles)</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">full_name</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Not Null</td>
+                                    <td>Citizen's full name.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">phone_number</td>
+                                    <td><span class="type-badge">VARCHAR(20)</span></td>
+                                    <td>Unique, Not Null</td>
+                                    <td>Mobile contact number for grievance tracking.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">ward_id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge fk">FK</span> -> wards(id)</td>
+                                    <td>Home ward where the citizen is registered.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Complaints Table -->
+                    <div class="card">
+                        <div class="card-title">Complaints Table <span class="status-badge status-completed">Live</span></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Field Name</th>
+                                    <th>Type</th>
+                                    <th>Constraints</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="field-name">id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge pk">PK</span></td>
+                                    <td>Primary Key for ticket references.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">citizen_id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge fk">FK</span> -> citizens(id)</td>
+                                    <td>Nullable. Linked if submitted by a registered citizen.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">raw_citizen_name</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Nullable</td>
+                                    <td>AI-extracted name for physical letter/whatsapp grievances.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">raw_citizen_contact</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Nullable</td>
+                                    <td>AI-extracted contact for physical letter/whatsapp grievances.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">category</td>
+                                    <td><span class="type-badge">VARCHAR(100)</span></td>
+                                    <td>Nullable (Open)</td>
+                                    <td>AI classified category. Accept any string dynamically.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">development_work_id</td>
+                                    <td><span class="type-badge">UUID</span></td>
+                                    <td><span class="key-badge fk">FK</span> -> development_works(id)</td>
+                                    <td>Nullable. Links the complaint to the MP's sanctioned project.</td>
+                                </tr>
+                                <tr>
+                                    <td class="field-name">status</td>
+                                    <td><span class="type-badge">VARCHAR(50)</span></td>
+                                    <td>CHECK ('Pending', 'Reviewed', 'Sanctioned', 'Rejected', 'Resolved')</td>
+                                    <td>Complaint status workflow. Stays 'Sanctioned' until development project is Completed.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Priority Score Sandbox -->
+        <div id="sandbox-tab" class="tab-content">
+            <div class="grid-layout">
+                <div class="sandbox">
+                    <h3 style="font-family:'Outfit'; margin-bottom:1.5rem; border-bottom:1.5px solid var(--border-color); padding-bottom: 0.5rem;">🎛 Adjust Priority Metrics</h3>
+                    
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">Urgency Score (AI Extracted)</span>
+                            <span id="urgency-val" class="slider-value">3</span>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:0.5rem;">Estimated urgency from complaint text (1 = Low, 5 = Critical)</p>
+                        <input type="range" id="urgency-input" min="1" max="5" value="3" step="1" oninput="calculatePriority()">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">Complaint Count (Ward Density)</span>
+                            <span id="complaints-val" class="slider-value">25</span>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:0.5rem;">Total number of reports regarding this category in this ward</p>
+                        <input type="range" id="complaints-input" min="1" max="250" value="25" step="1" oninput="calculatePriority()">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">Ward Population</span>
+                            <span id="population-val" class="slider-value">20,000</span>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-0.5rem; margin-bottom:0.5rem;">Total population of the target ward (census demographics)</p>
+                        <input type="range" id="population-input" min="5000" max="150000" value="20000" step="1000" oninput="calculatePriority()">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="results-panel">
+                        <h3 style="font-family:'Outfit'; color: var(--text-main); margin-bottom:1rem;">Calculated Priority Score</h3>
+                        <div id="priority-score" class="score-display">3.50</div>
+                        <p class="score-explanation">This priority indicator determines how high this ward's issue ranks on the MP's dashboard.</p>
+                        
+                        <div class="weight-breakdown">
+                            <div class="weight-card">
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Urgency Component (60%)</div>
+                                <div id="urgency-comp" class="weight-val urgency-text">1.80</div>
+                            </div>
+                            <div class="weight-card">
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.25rem;">Density Component (40%)</div>
+                                <div id="density-comp" class="weight-val density-text">1.70</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; text-align: left; font-size: 0.85rem;">
+                            <p style="font-weight: 600; color: #ffffff; margin-bottom:0.5rem;">Formula breakdown:</p>
+                            <code style="display:block; padding:0.5rem; background-color:#0b0f19; border-radius:6px; color:#e2e8f0; font-family:'JetBrains Mono', monospace; font-size:0.75rem;">
+                                Score = (Avg_Urgency * 0.6) + ((Complaints / Population) * 10,000 * 0.4)
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: SQL Migrations -->
+        <div id="sql-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    <span>⚡ Complete Supabase PostgreSQL Initialization Script</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Includes Audit Tables, Indexes, and Automatic Completion Trigger</span>
+                </div>
+                <pre><code><span class="sql-comment">-- 1. Enable UUID Extension</span>
+<span class="sql-keyword">CREATE EXTENSION IF NOT EXISTS</span> "uuid-ossp";
+
+<span class="sql-comment">-- 2. Create Wards Table</span>
+<span class="sql-keyword">CREATE TABLE</span> wards (
+    id UUID <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+    ward_name <span class="sql-type">VARCHAR(100) UNIQUE NOT NULL</span>,
+    ward_number <span class="sql-type">VARCHAR(20) UNIQUE NOT NULL</span>,
+    population <span class="sql-type">INTEGER NOT NULL CHECK</span> (population > 0),
+    latitude <span class="sql-type">DECIMAL(9,6) NOT NULL</span>,
+    longitude <span class="sql-type">DECIMAL(9,6) NOT NULL</span>,
+    boundary_geojson <span class="sql-type">JSONB</span>,
+    created_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP
+);
+
+<span class="sql-comment">-- 3. Create Profiles Table (For role governance)</span>
+<span class="sql-keyword">CREATE TABLE</span> profiles (
+    id UUID <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+    full_name <span class="sql-type">VARCHAR(100) NOT NULL</span>,
+    role <span class="sql-type">VARCHAR(50) DEFAULT</span> <span class="sql-string">'Citizen'</span> <span class="sql-type">CHECK</span> (role <span class="sql-keyword">IN</span> (<span class="sql-string">'MP'</span>, <span class="sql-string">'Staff'</span>, <span class="sql-string">'Officer'</span>, <span class="sql-string">'Citizen'</span>)),
+    assigned_ward_id UUID <span class="sql-keyword">REFERENCES</span> wards(id) <span class="sql-keyword">ON DELETE SET NULL</span>,
+    created_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP
+);
+
+<span class="sql-comment">-- 4. Create Citizens Table</span>
+<span class="sql-keyword">CREATE TABLE</span> citizens (
+    id UUID <span class="sql-keyword">PRIMARY KEY REFERENCES</span> profiles(id) <span class="sql-keyword">ON DELETE CASCADE</span>,
+    full_name <span class="sql-type">VARCHAR(100) NOT NULL</span>,
+    phone_number <span class="sql-type">VARCHAR(20) UNIQUE NOT NULL</span>,
+    email <span class="sql-type">VARCHAR(100) UNIQUE</span>,
+    ward_id UUID <span class="sql-keyword">REFERENCES</span> wards(id) <span class="sql-keyword">ON DELETE SET NULL</span>,
+    address <span class="sql-type">TEXT</span>,
+    created_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP
+);
+
+<span class="sql-comment">-- 5. Create Development Works (Sanctions) Table</span>
+<span class="sql-keyword">CREATE TABLE</span> development_works (
+    id UUID <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+    work_title <span class="sql-type">VARCHAR(200) NOT NULL</span>,
+    description <span class="sql-type">TEXT</span>,
+    ward_id UUID <span class="sql-keyword">NOT NULL REFERENCES</span> wards(id) <span class="sql-keyword">ON DELETE RESTRICT</span>,
+    sanctioned_budget <span class="sql-type">DECIMAL(12,2) NOT NULL DEFAULT</span> 0.00,
+    spent_amount <span class="sql-type">DECIMAL(12,2) NOT NULL DEFAULT</span> 0.00,
+    assigned_department <span class="sql-type">VARCHAR(100) NOT NULL</span>,
+    officer_in_charge <span class="sql-type">VARCHAR(100)</span>,
+    status <span class="sql-type">VARCHAR(50) DEFAULT</span> <span class="sql-string">'Sanctioned'</span> <span class="sql-type">CHECK</span> (status <span class="sql-keyword">IN</span> (<span class="sql-string">'Sanctioned'</span>, <span class="sql-string">'Tendering'</span>, <span class="sql-string">'Under Construction'</span>, <span class="sql-string">'Completed'</span>, <span class="sql-string">'Cancelled'</span>)),
+    created_by UUID <span class="sql-keyword">REFERENCES</span> profiles(id) <span class="sql-keyword">ON DELETE SET NULL</span>,
+    start_date <span class="sql-type">DATE</span>,
+    completion_date <span class="sql-type">DATE</span>,
+    created_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP,
+    updated_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP
+);
+
+<span class="sql-comment">-- 6. Create Complaints Table</span>
+<span class="sql-keyword">CREATE TABLE</span> complaints (
+    id UUID <span class="sql-keyword">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+    citizen_id UUID <span class="sql-keyword">REFERENCES</span> citizens(id) <span class="sql-keyword">ON DELETE SET NULL</span>,
+    raw_citizen_name <span class="sql-type">VARCHAR(100)</span>,
+    raw_citizen_contact <span class="sql-type">VARCHAR(100)</span>,
+    raw_text <span class="sql-type">TEXT NOT NULL</span>,
+    extracted_title <span class="sql-type">VARCHAR(200)</span>,
+    category <span class="sql-type">VARCHAR(100)</span>,
+    urgency_score <span class="sql-type">INTEGER CHECK</span> (urgency_score BETWEEN 1 AND 5),
+    sentiment <span class="sql-type">VARCHAR(50)</span>,
+    ward_id UUID <span class="sql-keyword">REFERENCES</span> wards(id) <span class="sql-keyword">ON DELETE SET NULL</span>,
+    development_work_id UUID <span class="sql-keyword">REFERENCES</span> development_works(id) <span class="sql-keyword">ON DELETE SET NULL</span>,
+    source <span class="sql-type">VARCHAR(50) DEFAULT</span> <span class="sql-string">'Portal'</span>,
+    status <span class="sql-type">VARCHAR(50) DEFAULT</span> <span class="sql-string">'Pending'</span> <span class="sql-type">CHECK</span> (status <span class="sql-keyword">IN</span> (<span class="sql-string">'Pending'</span>, <span class="sql-string">'Reviewed'</span>, <span class="sql-string">'Sanctioned'</span>, <span class="sql-string">'Rejected'</span>, <span class="sql-string">'Resolved'</span>)),
+    created_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP,
+    updated_at <span class="sql-type">TIMESTAMP WITH TIME ZONE DEFAULT</span> CURRENT_TIMESTAMP
+);
+
+<span class="sql-comment">-- 7. Automated Trigger Logic</span>
+<span class="sql-comment">-- Automatically transitions associated citizen complaints to 'Resolved' when the MP project status becomes 'Completed'</span>
+<span class="sql-keyword">CREATE OR REPLACE FUNCTION</span> resolve_linked_complaints()
+<span class="sql-keyword">RETURNS TRIGGER AS</span> $$
+<span class="sql-keyword">BEGIN</span>
+    <span class="sql-keyword">IF</span> NEW.status = <span class="sql-string">'Completed'</span> <span class="sql-keyword">AND</span> OLD.status != <span class="sql-string">'Completed'</span> <span class="sql-keyword">THEN</span>
+        <span class="sql-keyword">UPDATE</span> complaints
+        <span class="sql-keyword">SET</span> status = <span class="sql-string">'Resolved'</span>, updated_at = CURRENT_TIMESTAMP
+        <span class="sql-keyword">WHERE</span> development_work_id = NEW.id;
+    <span class="sql-keyword">END IF</span>;
+    <span class="sql-keyword">RETURN</span> NEW;
+<span class="sql-keyword">END</span>;
+$$ <span class="sql-keyword">LANGUAGE</span> plpgsql;
+
+<span class="sql-keyword">CREATE TRIGGER</span> trg_resolve_complaints
+<span class="sql-keyword">AFTER UPDATE ON</span> development_works
+<span class="sql-keyword">FOR EACH ROW</span>
+<span class="sql-keyword">EXECUTE FUNCTION</span> resolve_linked_complaints();
+
+<span class="sql-comment">-- 8. Performance Indexes</span>
+<span class="sql-keyword">CREATE INDEX</span> idx_complaints_ward <span class="sql-keyword">ON</span> complaints(ward_id);
+<span class="sql-keyword">CREATE INDEX</span> idx_complaints_work <span class="sql-keyword">ON</span> complaints(development_work_id);
+<span class="sql-keyword">CREATE INDEX</span> idx_development_ward <span class="sql-keyword">ON</span> development_works(ward_id);
+<span class="sql-keyword">CREATE INDEX</span> idx_citizens_phone <span class="sql-keyword">ON</span> citizens(phone_number);
+
+<span class="sql-comment">-- 9. Analytical View: Ward Level Priority Aggregations</span>
+<span class="sql-keyword">CREATE VIEW</span> ward_priorities <span class="sql-keyword">AS</span>
+<span class="sql-keyword">SELECT</span> 
+  w.id AS ward_id,
+  w.ward_name,
+  w.population AS ward_population,
+  w.latitude,
+  w.longitude,
+  COUNT(c.id) AS complaint_count,
+  COALESCE(AVG(c.urgency_score), 0)::NUMERIC(3,2) AS avg_urgency_score,
+  ROUND(
+    COALESCE(
+      (AVG(c.urgency_score) * 0.6) + 
+      ((COUNT(c.id)::DECIMAL / w.population) * 10000 * 0.4),
+      0
+    ),
+    2
+  ) AS priority_score
+<span class="sql-keyword">FROM</span> wards w
+<span class="sql-keyword">LEFT JOIN</span> complaints c <span class="sql-keyword">ON</span> c.ward_id = w.id
+<span class="sql-keyword">GROUP BY</span> w.id, w.ward_name, w.population, w.latitude, w.longitude;
+</code></pre>
+            </div>
+        </div>
+
+        <!-- Tab 4: Real-World APIs & Data -->
+        <div id="data-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">🌏 Real-World Grievance Integration & Geographic APIs</div>
+                <p style="margin-bottom: 2rem; color: var(--text-muted);">To transition LokSetu from mock hackathon data to an active production database, developers integrate official municipal layers and public registers. Here are the precise API integrations and open datasets for Indian municipal environments:</p>
+                
+                <div class="guide-step">
+                    <div class="guide-title">1. National Grievance Feed: CPGRAMS REST API</div>
+                    <p class="guide-desc">The Centralised Public Grievance Redress and Monitoring System (CPGRAMS) can feed regional grievances directly into LokSetu. Government departments can integrate with CPGRAMS APIs via the Open Government Data (OGD) platform.</p>
+                    <div class="api-details">
+                        <strong>API Portal:</strong> data.gov.in / api.data.gov.in<br>
+                        <strong>Endpoint Pattern:</strong> https://api.data.gov.in/resource/[Resource_ID]?api-key=[YOUR_KEY]&format=json<br>
+                        <strong>Authentication:</strong> Header: X-Api-Key: &lt;your_registered_api_key&gt;<br>
+                        <strong>Response Data:</strong> Grievance ID, complainant region details, text content, department category, status.
+                    </div>
+                    <a href="https://data.gov.in" target="_blank" class="link-btn">Register on Data.gov.in</a>
+                    <a href="https://api.data.gov.in" target="_blank" class="link-btn">Access API Portal</a>
+                </div>
+
+                <div class="guide-step">
+                    <div class="guide-title">2. Ward boundary Mapping: Delhi MCD Shapefiles</div>
+                    <p class="guide-desc">To plot heatmaps, download 2022 MCD Delimitation Ward boundaries (as Shapefiles or GeoJSON) and import them into the <code>boundary_geojson</code> database fields.</p>
+                    <div class="api-details">
+                        <strong>Source:</strong> OpenCity India Local Data Atlas<br>
+                        <strong>Data format:</strong> GeoJSON (Coordinate reference system: WGS84 EPSG:4326)<br>
+                        <strong>Query implementation:</strong> Direct bounding box intersections inside client SPA mapping systems (e.g. Leaflet.js).
+                    </div>
+                    <a href="https://data.opencity.in/dataset/delhi-municipal-ward-boundaries-2022" target="_blank" class="link-btn">Get Delhi Ward GeoJSON</a>
+                </div>
+
+                <div class="guide-step">
+                    <div class="guide-title">3. Population Densities: Census 2011 Primary Abstracts</div>
+                    <p class="guide-desc">Official population abstracts by the Census Commissioner of India are downloadable as CSVs. These are imported to establish the <code>population</code> value per ward in the database.</p>
+                    <a href="https://censusindia.gov.in/" target="_blank" class="link-btn">Census Digital Library India</a>
+                    <a href="https://data.opencity.in/dataset/delhi-ward-census-data" target="_blank" class="link-btn">Download Delhi Ward population CSV</a>
+                </div>
+
+                <div class="guide-step">
+                    <div class="guide-title">4. Local Government Directory (LGD) Standardization</div>
+                    <p class="guide-desc">The Ministry of Panchayati Raj publishes official web services to map and query standard location codes for Indian districts, blocks, and municipal wards. Storing LGD numbers in the <code>ward_number</code> database column guarantees interoperability with other state portals.</p>
+                    <div class="api-details">
+                        <strong>Endpoint Portal:</strong> lgdirectory.gov.in (REST & SOAP APIs)<br>
+                        <strong>Key Service:</strong> Get Urban Local Body (ULB) Wards directory service.
+                    </div>
+                    <a href="https://lgdirectory.gov.in/" target="_blank" class="link-btn">LGD Web Services Portal</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>LokSetu Database Architecture Design &copy; 2026. Code for Communities Hackathon.</p>
+        </footer>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Deactivate all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show current tab content & active button
+            document.getElementById(tabId).classList.add('active');
+            
+            // Find the button clicking on
+            const activeBtn = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        function calculatePriority() {
+            // Get inputs
+            const urgency = parseFloat(document.getElementById('urgency-input').value);
+            const complaints = parseFloat(document.getElementById('complaints-input').value);
+            const population = parseFloat(document.getElementById('population-input').value);
+
+            // Update UI Labels
+            document.getElementById('urgency-val').innerText = urgency;
+            document.getElementById('complaints-val').innerText = complaints;
+            document.getElementById('population-val').innerText = population.toLocaleString();
+
+            // Formula Components
+            const urgencyComponent = urgency * 0.6;
+            const densityComponent = (complaints / population) * 10000 * 0.4;
+            const totalScore = urgencyComponent + densityComponent;
+
+            // Update Results
+            document.getElementById('urgency-comp').innerText = urgencyComponent.toFixed(2);
+            document.getElementById('density-comp').innerText = densityComponent.toFixed(2);
+            document.getElementById('priority-score').innerText = totalScore.toFixed(2);
+        }
+
+        // Run initial calculation
+        calculatePriority();
+    </script>
+</body>
+</html>
