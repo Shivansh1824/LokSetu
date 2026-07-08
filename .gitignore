@@ -29,3 +29,7 @@ dist-ssr
 .env.*
 !.env.example
 
+# Project specific ignored folders
+planning_docs/
+skills/
+supabase/migrations/
