@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainScreen from './screens/MainScreen/MainScreen';
 import LoginScreen from './screens/LoginScreen/LoginScreen';
+import FormScreen from './screens/FormScreen/FormScreen';
+import BasicOnboardingScreen from './screens/BasicOnboardingScreen/BasicOnboardingScreen';
 import { LanguageProvider } from './context/LanguageContext';
 import './index.css';
 
@@ -43,6 +45,8 @@ function App() {
           <Routes>
             <Route path="/" element={<MainScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} />
             <Route path="/login" element={<LoginScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} />
+            <Route path="/form" element={<FormScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} />
+            <Route path="/onboarding-basic" element={<BasicOnboardingScreen isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} />
           </Routes>
         </Router>
       </div>

@@ -8,7 +8,7 @@ const Header = ({ isDarkMode, toggleTheme }) => {
   const { language, toggleLanguage, t } = useLanguage();
   const location = useLocation();
 
-  const isLoginScreen = location.pathname === '/login';
+  const isAuthScreen = location.pathname === '/login' || location.pathname === '/form';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,7 +49,7 @@ const Header = ({ isDarkMode, toggleTheme }) => {
           <span className={styles.logoText}>Lok<span className={styles.logoAccent}>Setu</span></span>
         </Link>
         
-        {!isLoginScreen && (
+        {!isAuthScreen && (
           <nav className={styles.nav}>
             <a href="/#how-it-works" className={styles.navLink}>{t('howItWorks')}</a>
             <a href="/#features" className={styles.navLink}>{t('features')}</a>
@@ -59,7 +59,7 @@ const Header = ({ isDarkMode, toggleTheme }) => {
         )}
 
         <div className={styles.actions}>
-          {!isLoginScreen ? (
+          {!isAuthScreen ? (
             <>
               <Link to="/login?type=mp" className="btn btn-secondary btn-sm">{t('mpLogin')}</Link>
               <Link to="/login?type=citizen" className="btn btn-citizen btn-sm">{t('fileComplaint')}</Link>
