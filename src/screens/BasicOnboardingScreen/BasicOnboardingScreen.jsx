@@ -25,12 +25,34 @@ const BasicOnboardingScreen = ({ isDarkMode, toggleTheme }) => {
       }
       setUser(authUser);
       
-      // Check if user is already fully onboarded (exists in citizens or mps)
-      const { data: citizenData } = await supabase.from('citizens').select('id').eq('id', authUser.id).maybeSingle();
-      const { data: mpData } = await supabase.from('mps').select('id').eq('id', authUser.id).maybeSingle();
+      // Check if user has completed basic onboarding (Form 1) and full onboarding (Form 2)
+      const { data: citizenData } = await supabase
+        .from('citizens')
+        .select('id, phone_number')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      const { data: mpData } = await supabase
+        .from('mps')
+        .select('id, official_phone')
+        .eq('id', authUser.id)
+        .maybeSingle();
       
-      if (citizenData || mpData) {
-        navigate('/'); // They already have a profile, go to dashboard
+      if (citizenData) {
+        if (citizenData.phone_number) {
+          navigate('/dashboard'); // Fully onboarded, go to dashboard
+        } else {
+          navigate('/form?type=citizen'); // Basic onboarded but needs to fill Form 2
+        }
+        return;
+      }
+
+      if (mpData) {
+        if (mpData.official_phone) {
+          navigate('/dashboard'); // Fully onboarded, go to dashboard
+        } else {
+          navigate('/form?type=mp'); // Basic onboarded but needs to fill Form 2
+        }
         return;
       }
 

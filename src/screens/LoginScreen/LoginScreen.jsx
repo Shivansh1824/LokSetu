@@ -227,7 +227,31 @@ const LoginScreen = ({ isDarkMode, toggleTheme }) => {
         });
         if (error) throw error;
         
-        window.location.href = `/form?type=${activeTab}`;
+        // Check onboarding status
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: citizenData } = await supabase
+            .from('citizens')
+            .select('id, phone_number')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const { data: mpData } = await supabase
+            .from('mps')
+            .select('id, official_phone')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (citizenData && citizenData.phone_number) {
+            window.location.href = '/dashboard';
+          } else if (mpData && mpData.official_phone) {
+            window.location.href = '/dashboard';
+          } else {
+            window.location.href = `/form?type=${activeTab}`;
+          }
+        } else {
+          window.location.href = `/form?type=${activeTab}`;
+        }
       } else if (authStep === 'forgot_password') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,

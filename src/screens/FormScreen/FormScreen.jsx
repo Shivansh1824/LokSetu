@@ -19,6 +19,15 @@ const splitFullName = (fullName) => {
   }
 };
 
+const cleanLocationName = (name) => {
+  if (!name) return '';
+  // Remove "Ward WN-XXXXX" or "Ward XXXXX" or "Ward XX" (case-insensitive)
+  let cleaned = name.replace(/Ward\s+(WN-)?\d+/gi, '');
+  // Remove trailing/leading hyphens, colons, spaces, or parentheses left over
+  cleaned = cleaned.trim().replace(/^[-–—:\s]+|[-–—:\s]+$/g, '');
+  return cleaned || name;
+};
+
 const MOCK_WARDS = [
   { id: '11111111-1111-1111-1111-111111111111', ward_name: 'Ward 14 - Infrastructure', ward_number: '14' },
   { id: '22222222-2222-2222-2222-222222222222', ward_name: 'Ward 12 - Civic Center', ward_number: '12' },
@@ -61,8 +70,16 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
   const [mpTermEnd, setMpTermEnd] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  
+  // [DEBUG-GEO] Add state for on-screen debug logs
+  const [debugLogs, setDebugLogs] = useState([]);
+  const addDebug = (msg) => {
+    setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
+    console.log(`[DEBUG-GEO] ${msg}`);
+  };
 
   // 1. Fetch user session and profile role
   useEffect(() => {
@@ -119,6 +136,99 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
     fetchDropdownData();
   }, []);
 
+  // 3. Geolocation & Auto-fill logic
+  const handleDetectLocation = () => {
+    addDebug('Button clicked. Checking if geolocation is supported...');
+    if ('geolocation' in navigator) {
+      addDebug('Geolocation supported. Calling getCurrentPosition...');
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          addDebug(`Success! Got coordinates: Lat = ${latitude}, Lon = ${longitude}`);
+          try {
+            addDebug('Calling Nominatim API (Reverse Geocoding) for address string...');
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+            addDebug(`Nominatim API HTTP Status: ${res.status}`);
+            
+            const data = await res.json();
+            let addressString = "Unknown Location";
+            if (data && data.display_name) {
+              addressString = data.display_name;
+              setCitizenAddress(data.display_name);
+              addDebug(`Address Found: "${data.display_name}"`);
+            } else {
+              addDebug(`Address missing in payload.`);
+              setErrorMsg(language === 'en' 
+                ? 'Location address details not found.' 
+                : 'स्थान का पता विवरण नहीं मिला।');
+            }
+
+            // --- AI EDGE FUNCTION CALL ---
+            addDebug('Invoking AI Mapping Edge Function...');
+            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('match-location', {
+              body: { latitude, longitude, addressString }
+            });
+
+            if (aiError) {
+              throw new Error(`Edge Function Error: ${aiError.message}`);
+            }
+
+            addDebug(`AI Response Status: Success`);
+            
+            if (aiResponse.ward_id) {
+              setCitizenWard(aiResponse.ward_id);
+              
+              // If the AI dynamically created a new ward, we must inject it into the local state so the dropdown renders it correctly
+              if (aiResponse.action === 'create' && aiResponse.ward) {
+                addDebug(`AI created new ward: ${aiResponse.ward.ward_name}`);
+                setWards((prevWards) => {
+                  const updatedWards = [...prevWards, aiResponse.ward];
+                  // Sort them to keep dropdown alphabetical or numbered
+                  return updatedWards.sort((a, b) => (a.ward_number || '').localeCompare(b.ward_number || ''));
+                });
+              } else {
+                addDebug(`AI matched existing ward ID: ${aiResponse.ward_id}`);
+              }
+            } else {
+              addDebug('AI did not return a valid ward_id.');
+            }
+
+          } catch (error) {
+            addDebug(`API Call failed: ${error.message}`);
+          } finally {
+            setIsLocating(false);
+            addDebug('Loading state deactivated.');
+          }
+        },
+        (error) => {
+          addDebug(`Geolocation Error Code ${error.code}: ${error.message}`);
+          setIsLocating(false);
+          if (error.code === 1) {
+            setErrorMsg(language === 'en'
+              ? 'Location access was blocked. Please reset permissions: Safari Menu > Settings for localhost... > Location > Ask/Allow.'
+              : 'स्थान पहुंच अवरुद्ध है। कृपया अनुमतियों को रीसेट करें: सफारी मेनू > लोकलहोस्ट के लिए सेटिंग्स... > स्थान > पूछें/अनुमति दें।');
+          } else {
+            setErrorMsg(language === 'en'
+              ? 'Unable to retrieve location. Please type your details manually.'
+              : 'स्थान प्राप्त करने में असमर्थ। कृपया अपना विवरण मैन्युअल रूप से दर्ज करें।');
+          }
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: Infinity }
+      );
+    } else {
+      addDebug('Geolocation is NOT supported in this browser.');
+    }
+  };
+
+  // 3. Geolocation & Auto-fill logic (attempt on mount)
+  useEffect(() => {
+    if (wards.length > 0) {
+      // Disabled auto-attempt for debugging to ensure clean logs on click
+      // handleDetectLocation();
+    }
+  }, [wards]);
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -136,11 +246,12 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
       }
 
       if (formRole === 'Citizen') {
-        if (!citizenPhone || !citizenWard || !age) {
+        if (!citizenPhone || !citizenWard || !age || !citizenAddress) {
           throw new Error(language === 'en' ? 'Please fill in all required fields.' : 'कृपया सभी आवश्यक फ़ील्ड भरें।');
         }
         
         const nameParts = splitFullName(fullName);
+        const selectedWardObj = wards.find(w => w.id === citizenWard);
 
         const { error } = await supabase.from('citizens').update({
           first_name: nameParts.first_name,
@@ -149,6 +260,8 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
           age: parseInt(age, 10),
           phone_number: citizenPhone,
           ward_id: citizenWard,
+          ward_number: selectedWardObj ? selectedWardObj.ward_number : null,
+          location: selectedWardObj ? cleanLocationName(selectedWardObj.ward_name) : null,
           address: citizenAddress || null
         }).eq('id', user.id);
 
@@ -195,6 +308,16 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
       <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
       
       <div className={styles.container}>
+        {/* [DEBUG-GEO] On-screen debugger panel */}
+        {debugLogs.length > 0 && (
+          <div style={{ background: '#111', color: '#0f0', padding: '16px', borderRadius: '8px', marginBottom: '20px', width: '100%', maxWidth: '660px', fontFamily: 'monospace', fontSize: '12px', overflowX: 'auto', textAlign: 'left' }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#fff' }}>[DEBUG-GEO] Location Trace</h4>
+            {debugLogs.map((log, i) => (
+              <div key={i}>{log}</div>
+            ))}
+          </div>
+        )}
+        
         <div className={styles.formCard}>
           
           <div className={styles.formHeader}>
@@ -255,66 +378,132 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
               </div>
             </div>
             
-            {/* Age */}
-            <div className={styles.formGroup}>
-              <label>{language === 'en' ? 'Age' : 'आयु'}</label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <input 
-                  type="number" 
-                  className={styles.formInput} 
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  placeholder={language === 'en' ? 'Enter your age' : 'अपनी आयु दर्ज करें'}
-                  min="1"
-                  max="120"
-                  required
-                />
-              </div>
-            </div>
-
             {formRole === 'Citizen' ? (
               <>
-                {/* Phone Number */}
-                <div className={styles.formGroup}>
-                  <label>{language === 'en' ? 'Phone Number' : 'फ़ोन नंबर'}</label>
-                  <div className={styles.inputWrapper}>
-                    <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    <input 
-                      type="tel" 
-                      className={styles.formInput} 
-                      value={citizenPhone}
-                      onChange={(e) => setCitizenPhone(e.target.value)}
-                      placeholder={language === 'en' ? 'Enter 10-digit mobile number' : '10 अंकों का मोबाइल नंबर दर्ज करें'}
-                      required
-                    />
+                {/* Age & Phone Number Grid */}
+                <div className={styles.formGrid}>
+                  {/* Age */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Age' : 'आयु'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      <input 
+                        type="number" 
+                        className={styles.formInput} 
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        placeholder={language === 'en' ? 'Enter your age' : 'अपनी आयु दर्ज करें'}
+                        min="1"
+                        max="120"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Phone Number' : 'फ़ोन नंबर'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                      <input 
+                        type="tel" 
+                        className={styles.formInput} 
+                        value={citizenPhone}
+                        onChange={(e) => setCitizenPhone(e.target.value)}
+                        placeholder={language === 'en' ? 'Enter 10-digit mobile number' : '10 अंकों का मोबाइल नंबर दर्ज करें'}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Ward */}
-                <div className={styles.formGroup}>
-                  <label>{language === 'en' ? 'Ward Number / Location' : 'वार्ड संख्या / स्थान'}</label>
-                  <div className={styles.inputWrapper}>
-                    <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                    <select 
-                      className={styles.formSelect}
-                      value={citizenWard}
-                      onChange={(e) => setCitizenWard(e.target.value)}
-                      required
-                    >
-                      <option value="">{language === 'en' ? '-- Select Ward --' : '-- वार्ड चुनें --'}</option>
-                      {wards.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.ward_name} ({language === 'en' ? 'Ward' : 'वार्ड'} {w.ward_number})
-                        </option>
-                      ))}
-                    </select>
+                {/* Ward Number & Location */}
+                <div className={styles.formGrid}>
+                  {/* Ward Number */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Ward Number' : 'वार्ड संख्या'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={`${styles.inputIcon} ${isLocating ? styles.spin : ''}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        {isLocating ? (
+                          <>
+                            <circle cx="12" cy="12" r="10" stroke="var(--border-light)" strokeWidth="4"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--primary-light)" strokeWidth="4"></path>
+                          </>
+                        ) : (
+                          <>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                          </>
+                        )}
+                      </svg>
+                      <select 
+                        className={styles.formSelect}
+                        value={citizenWard}
+                        onChange={(e) => setCitizenWard(e.target.value)}
+                        required
+                        disabled={isLocating}
+                      >
+                        <option value="">{isLocating ? (language === 'en' ? '-- Detecting... --' : '-- पता लगाया जा रहा है... --') : (language === 'en' ? '-- Select Ward --' : '-- वार्ड चुनें --')}</option>
+                        {wards.map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {language === 'en' ? `Ward ${w.ward_number}` : `वार्ड ${w.ward_number}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Location' : 'स्थान'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={`${styles.inputIcon} ${isLocating ? styles.spin : ''}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        {isLocating ? (
+                          <>
+                            <circle cx="12" cy="12" r="10" stroke="var(--border-light)" strokeWidth="4"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--primary-light)" strokeWidth="4"></path>
+                          </>
+                        ) : (
+                          <>
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                          </>
+                        )}
+                      </svg>
+                      <select 
+                        className={styles.formSelect}
+                        value={citizenWard}
+                        onChange={(e) => setCitizenWard(e.target.value)}
+                        required
+                        disabled={isLocating}
+                      >
+                        <option value="">{isLocating ? (language === 'en' ? '-- Detecting... --' : '-- पता लगाया जा रहा है... --') : (language === 'en' ? '-- Select Location --' : '-- स्थान चुनें --')}</option>
+                        {wards.map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {cleanLocationName(w.ward_name)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 {/* Address */}
                 <div className={styles.formGroup}>
-                  <label>{language === 'en' ? 'Address (Optional)' : 'पता (वैकल्पिक)'}</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ marginBottom: 0 }}>{language === 'en' ? 'Address' : 'पता'}</label>
+                    <button 
+                      type="button" 
+                      onClick={handleDetectLocation}
+                      className={styles.detectBtn}
+                      disabled={isLocating}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                      {isLocating 
+                        ? (language === 'en' ? 'Detecting...' : 'खोजा जा रहा है...') 
+                        : (language === 'en' ? 'Detect Location' : 'स्थान खोजें')}
+                    </button>
+                  </div>
                   <div className={styles.inputWrapper}>
                     <svg className={styles.inputIcon} style={{top: '14px'}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     <textarea 
@@ -322,68 +511,93 @@ const FormScreen = ({ isDarkMode, toggleTheme }) => {
                       value={citizenAddress}
                       onChange={(e) => setCitizenAddress(e.target.value)}
                       placeholder={language === 'en' ? 'Enter house, block or street details' : 'घर, ब्लॉक या सड़क का विवरण दर्ज करें'}
+                      required
                     />
                   </div>
                 </div>
               </>
             ) : (
               <>
-                {/* Official Phone */}
-                <div className={styles.formGroup}>
-                  <label>{language === 'en' ? 'Official Phone Number' : 'आधिकारिक फ़ोन नंबर'}</label>
-                  <div className={styles.inputWrapper}>
-                    <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    <input 
-                      type="tel" 
-                      className={styles.formInput} 
-                      value={mpPhone}
-                      onChange={(e) => setMpPhone(e.target.value)}
-                      placeholder={language === 'en' ? 'Enter official phone' : 'आधिकारिक फ़ोन नंबर दर्ज करें'}
-                      required
-                    />
+                {/* Age & Phone Number Grid */}
+                <div className={styles.formGrid}>
+                  {/* Age */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Age' : 'आयु'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      <input 
+                        type="number" 
+                        className={styles.formInput} 
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        placeholder={language === 'en' ? 'Enter your age' : 'अपनी आयु दर्ज करें'}
+                        min="1"
+                        max="120"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Official Phone */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Official Phone Number' : 'आधिकारिक फ़ोन नंबर'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                      <input 
+                        type="tel" 
+                        className={styles.formInput} 
+                        value={mpPhone}
+                        onChange={(e) => setMpPhone(e.target.value)}
+                        placeholder={language === 'en' ? 'Enter official phone' : 'आधिकारिक फ़ोन नंबर दर्ज करें'}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Political Party */}
-                <div className={styles.formGroup}>
-                  <label>{language === 'en' ? 'Political Party' : 'राजनीतिक दल'}</label>
-                  <div className={styles.inputWrapper}>
-                    <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
-                    <select 
-                      className={styles.formSelect}
-                      value={mpParty}
-                      onChange={(e) => setMpParty(e.target.value)}
-                      required
-                    >
-                      <option value="">{language === 'en' ? '-- Select Party --' : '-- दल चुनें --'}</option>
-                      <option value="BJP">Bharatiya Janata Party (BJP)</option>
-                      <option value="INC">Indian National Congress (INC)</option>
-                      <option value="AAP">Aam Aadmi Party (AAP)</option>
-                      <option value="AITC">All India Trinamool Congress (AITC)</option>
-                      <option value="DMK">Dravida Munnetra Kazhagam (DMK)</option>
-                      <option value="IND">Independent (IND)</option>
-                    </select>
+                {/* Party & Constituency Grid */}
+                <div className={styles.formGrid}>
+                  {/* Political Party */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Political Party' : 'राजनीतिक दल'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                      <select 
+                        className={styles.formSelect}
+                        value={mpParty}
+                        onChange={(e) => setMpParty(e.target.value)}
+                        required
+                      >
+                        <option value="">{language === 'en' ? '-- Select Party --' : '-- दल चुनें --'}</option>
+                        <option value="BJP">Bharatiya Janata Party (BJP)</option>
+                        <option value="INC">Indian National Congress (INC)</option>
+                        <option value="AAP">Aam Aadmi Party (AAP)</option>
+                        <option value="AITC">All India Trinamool Congress (AITC)</option>
+                        <option value="DMK">Dravida Munnetra Kazhagam (DMK)</option>
+                        <option value="IND">Independent (IND)</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
 
-                {/* Constituency */}
-                <div className={styles.formGroup}>
-                  <label>{language === 'en' ? 'Constituency' : 'निर्वाचन क्षेत्र'}</label>
-                  <div className={styles.inputWrapper}>
-                    <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    <select 
-                      className={styles.formSelect}
-                      value={mpConstituency}
-                      onChange={(e) => setMpConstituency(e.target.value)}
-                      required
-                    >
-                      <option value="">{language === 'en' ? '-- Select Constituency --' : '-- निर्वाचन क्षेत्र चुनें --'}</option>
-                      {constituencies.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.constituency_name} ({c.state})
-                        </option>
-                      ))}
-                    </select>
+                  {/* Constituency */}
+                  <div className={styles.formGroup}>
+                    <label>{language === 'en' ? 'Constituency' : 'निर्वाचन क्षेत्र'}</label>
+                    <div className={styles.inputWrapper}>
+                      <svg className={styles.inputIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                      <select 
+                        className={styles.formSelect}
+                        value={mpConstituency}
+                        onChange={(e) => setMpConstituency(e.target.value)}
+                        required
+                      >
+                        <option value="">{language === 'en' ? '-- Select Constituency --' : '-- निर्वाचन क्षेत्र चुनें --'}</option>
+                        {constituencies.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.constituency_name} ({c.state})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 

@@ -24,7 +24,7 @@
   border-radius: 16px;
   padding: var(--space-8);
   width: 100%;
-  max-width: 580px;
+  max-width: 660px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);
@@ -99,6 +99,17 @@
   font-family: var(--font-family);
   font-size: 1rem;
   transition: all var(--transition-fast);
+}
+
+.formSelect {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 40px; /* Make room for custom arrow */
 }
 
 .formSelect option {
@@ -189,6 +200,11 @@
   }
 }
 
+.spin {
+  animation: spin 1.5s linear infinite;
+  transform-origin: center;
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -204,3 +220,28 @@
     padding: var(--space-5);
   }
 }
+
+.detectBtn {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary-color);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detectBtn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.detectBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
